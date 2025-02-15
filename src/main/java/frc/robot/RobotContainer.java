@@ -7,19 +7,19 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.DriveCommand;
-import frc.robot.subsystems.Drive;
-import poplib.src.main.java.poplib.controllers.oi.XboxOI;
+import frc.robot.subsystems.Drivebase;
+import poplib.controllers.oi.XboxOI;
 
 
 public class RobotContainer {
-  private Drive drive = new Drive();
+  private Drivebase drive = new Drivebase();
   XboxOI oi;
   CommandXboxController driveController = new CommandXboxController(0);
   // private XboxOI driveJoystick;
   // private CommandJoystick transJoystick;
 
   public RobotContainer() {
-    drive = Drive.getInstance();
+    drive = Drivebase.getInstance();
     oi = XboxOI.getInstance();
     configureBindings();
 

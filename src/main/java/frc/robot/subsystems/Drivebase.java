@@ -10,24 +10,22 @@ import com.studica.frc.AHRS;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
-import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
-import poplib.src.main.java.poplib.control.PIDConfig;
-import poplib.src.main.java.poplib.smart_dashboard.PIDTuning;
+import poplib.smart_dashboard.PIDTuning;
 
-public class Drive extends SubsystemBase {
+public class Drivebase extends SubsystemBase {
   private SparkMax leadRightMotor;
   private SparkMax followRightMotor;
   private SparkMax leadLeftMotor;
   private SparkMax followLeftMotor;
+
   private final DifferentialDrive drive;
+
   private DifferentialDriveKinematics kinematics;
   private DifferentialDriveOdometry odometry;
   private AHRS gyro;
@@ -37,16 +35,16 @@ public class Drive extends SubsystemBase {
   private static double Setpoint;
   protected PIDTuning leftTuning;
   protected PIDTuning rightTuning;
-  private static Drive instance;
+  private static Drivebase instance;
 
-  public static Drive getInstance() {
+  public static Drivebase getInstance() {
     if (instance == null) {
-        instance = new Drive();
+        instance = new Drivebase();
       }
     return instance;
   }
 
-  public Drive() {
+  public Drivebase() {
     leadLeftMotor = DriveConstants.LeadLeftMotor.createSparkMax();
     followLeftMotor = DriveConstants.FollowLeftMotor.createSparkMax();
     leadRightMotor = DriveConstants.LeadRightMotor.createSparkMax();
@@ -59,11 +57,12 @@ public class Drive extends SubsystemBase {
     
     gyro = new AHRS(null);
     gyro.reset();
+
     odometry = new DifferentialDriveOdometry
     (gyro.getRotation2d(), leadLeftMotor.getEncoder().getPosition(), 
     leadRightMotor.getEncoder().getPosition(), new Pose2d(0,0, new Rotation2d()));
-    //.getPosition returns anmount of motor turns but we need distance traveled
 
+    //.getPosition returns anmount of motor turns but we need distance traveled
     // xpid = DriveConstants.X_PID_CONFIG.getPIDController(); 
     // thetapid = DriveConstants.THETA_PID_CONFIG.getPIDController();
 
@@ -76,7 +75,12 @@ public class Drive extends SubsystemBase {
 
   public void updateOdometry() {
     odometry.update(
-        gyro.getRotation2d(), leadLeftMotor.getEncoder().getPosition(), leadRightMotor.getEncoder().getPosition());
+        gyro.getRotation2d(),
+  
+        // TODO: Check if leadXXXMotor.getEncoder().getPosition() returns the distance in meters
+        // TODO: Should we use both leadMotor and followerMotor encoders and than avarage them
+        leadLeftMotor.getEncoder().getPosition(), 
+        leadRightMotor.getEncoder().getPosition());
   }
 
   public Command turn(double angle){
@@ -105,14 +109,15 @@ public class Drive extends SubsystemBase {
     }));
   }
 
-  // public void driveArcade(double xSpeed, double zRotation) {
-  //   drive.arcadeDrive(xSpeed, zRotation);
-  // }
+  public void driveArcade(double xSpeed, double zRotation) {
+    drive.arcadeDrive(xSpeed, zRotation);
+  }
 
   @Override
   public void periodic() {
     updateOdometry();
-    leftTuning.updatePID(leadLeftMotor);
-    rightTuning.updatePID(leadRightMotor);
+    // TODO: why we run this logic 50 times per second?
+    // leftTuning.updatePID(leadLeftMotor);
+    // rightTuning.updatePID(leadRightMotor);
   }
 }

@@ -4,11 +4,11 @@
 
 package frc.robot;
 
-import poplib.src.main.java.poplib.motor.MotorConfig;
+import poplib.motor.MotorConfig;
 import edu.wpi.first.math.controller.PIDController;
-import poplib.src.main.java.poplib.control.PIDConfig;
-import poplib.src.main.java.poplib.motor.FollowerConfig;
-import poplib.src.main.java.poplib.motor.Mode;
+import poplib.control.PIDConfig;
+import poplib.motor.FollowerConfig;
+import poplib.motor.Mode;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean

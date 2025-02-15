@@ -5,18 +5,18 @@
 package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.Drive;
+import frc.robot.subsystems.Drivebase;
 import java.util.function.DoubleSupplier;
 
 // Command to drive the robot with joystick inputs
 public class DriveCommand extends Command {
   private final DoubleSupplier xSpeed;
   private final DoubleSupplier zRotation;
-  private final Drive driveSubsystem;
+  private final Drivebase driveSubsystem;
 
   // Constructor. Runs only once when the command is first created.
   public DriveCommand(
-      DoubleSupplier xSpeed, DoubleSupplier zRotation, Drive driveSubsystem) {
+      DoubleSupplier xSpeed, DoubleSupplier zRotation, Drivebase driveSubsystem) {
     // Save parameters to local variables for use later
     this.xSpeed = xSpeed;
     this.zRotation = zRotation;
