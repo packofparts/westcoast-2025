@@ -4,19 +4,15 @@
 
 package frc.robot.subsystems;
 
-import java.util.function.Supplier;
-
 import com.revrobotics.spark.SparkMax;
 import com.studica.frc.AHRS;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
@@ -36,14 +32,14 @@ public class Drivebase extends SubsystemBase {
   private AHRS gyro;
   private static PIDController xpid;
   private static PIDController thetapid;
-  private static double turnSetpoint;
-  private static double Setpoint;
   protected PIDTuning leftTuning;
   protected PIDTuning rightTuning;
   private static Drivebase instance;
-  private Translation2d offset;
-  private Field2d field;
   private Pose2d currentPose;
+  private double X;
+  private double Y;
+  private double theta;
+
 
   public static Drivebase getInstance() {
     if (instance == null) {
@@ -66,9 +62,9 @@ public class Drivebase extends SubsystemBase {
     gyro = new AHRS(null);
     gyro.reset();
 
-    field = new Field2d();
     xpid.setTolerance(AutoAlign.X_TOLERANCE);
     thetapid.setTolerance(AutoAlign.THETA_TOLERANCE);
+    currentPose = new Pose2d();
 
     odometry = new DifferentialDriveOdometry
     (gyro.getRotation2d(), leadLeftMotor.getEncoder().getPosition(), 
@@ -77,55 +73,24 @@ public class Drivebase extends SubsystemBase {
     //.getPosition returns anmount of motor turns but we need distance traveled
     // xpid = DriveConstants.X_PID_CONFIG.getPIDController(); 
     // thetapid = DriveConstants.THETA_PID_CONFIG.getPIDController();
-
-    turnSetpoint = 0.0;
-    thetapid.setSetpoint(turnSetpoint);
-    xpid.setSetpoint(Setpoint);
-    
     drive = new DifferentialDrive(leadLeftMotor, leadRightMotor);
   }
 
-  public Command moveToPoseOdom(Supplier<Pose2d> poseSupplier, Translation2d newOffset) {
-    return runOnce(() -> {
-      offset = newOffset == null ? DriveConstants.AutoAlign.DEFAULT_OFFSET : newOffset;
-
-      Pose2d pose = poseSupplier.get();
-      Rotation2d targetRot = pose.getRotation();
-
-      offset = offset.rotateBy(targetRot);
-      Translation2d offsetTarget = pose.getTranslation().plus(offset); 
-
-      field.getObject("target").setPose(new Pose2d(offsetTarget, targetRot));
-
-      xpid.setSetpoint(offsetTarget.getX());
-      thetapid.setSetpoint(targetRot.getRadians());
-
-      xpid.calculate(currentPose.getX());
-      thetapid.calculate(currentPose.getRotation().getRadians());
-    }).andThen(run(
-      () -> {
-          turn(thetapid.calculate(currentPose.getRotation().getRadians()));
-      }
-  )).until(
-    () -> thetapid.atSetpoint()
-    ).andThen(run(
-      () -> {
-        pleaseDrive(xpid.calculate(currentPose.getX()));
-      }
-    )).until(
-      () -> xpid.atSetpoint()
-    ).andThen(
-      () -> {
-        xpid.close();
-        thetapid.close();
-      }
-    );
+  public Command moveToPose(Pose2d targetPose2d) {
+     return runOnce(() -> {
+      X = Math.abs(currentPose.getX() - targetPose2d.getX());
+      Y = Math.abs(currentPose.getY() - targetPose2d.getY());
+      theta = Math.atan(Y/X);
+     }).andThen(
+      turnToPose(theta)
+     ).andThen(
+      driveToPose(targetPose2d)
+     );
   }
 
-
-  public Command turn(double angle){
+  public Command turnToPose(double angle){
     return runOnce(() -> {
-      thetapid.setSetpoint(angle);
+      thetapid.setSetpoint(0);
       thetapid.calculate(gyro.getAngle());
     }).andThen(run(() -> {
       leadLeftMotor.set(thetapid.calculate(gyro.getAngle())*DriveConstants.DRIVE_MOVE_SPEED);
@@ -135,18 +100,37 @@ public class Drivebase extends SubsystemBase {
     andThen(runOnce(() -> {
       leadLeftMotor.stopMotor();
       leadRightMotor.stopMotor();
+      thetapid.close();
     }));
   }
 
-  public Command pleaseDrive(double velocity){
+  public Command driveToPose(Pose2d targetPose){
     return runOnce(() -> {
-      xpid.setSetpoint(velocity);
-      xpid.calculate(leadLeftMotor.get());
+      xpid.setSetpoint(0.0);
+      X = Math.abs(currentPose.getX() - targetPose.getX());
+      Y = Math.abs(currentPose.getY() - targetPose.getY());
+      xpid.calculate(Math.hypot(X, Y));
     }).andThen(run( () -> {
-      leadLeftMotor.set(xpid.calculate(velocity));
-    })).alongWith(run(() -> {
-      leadRightMotor.set(xpid.calculate(velocity));
+      X = Math.abs(currentPose.getX() - targetPose.getX());
+      Y = Math.abs(currentPose.getY() - targetPose.getY());
+      leadLeftMotor.set(xpid.calculate(Math.hypot(X, Y)));
+      leadRightMotor.set(xpid.calculate(Math.hypot(X, Y)));
+    })).until(xpid::atSetpoint)
+    .andThen(runOnce(() -> {
+      xpid.close();
+      leadLeftMotor.stopMotor();
+      leadRightMotor.stopMotor();
     }));
+  }
+
+  public void updateOdometry() {
+    odometry.update(
+        gyro.getRotation2d(),
+  
+        // TODO: Check if leadXXXMotor.getEncoder().getPosition() returns the distance in meters
+        // TODO: Should we use both leadMotor and followerMotor encoders and than avarage them
+        leadLeftMotor.getEncoder().getPosition(), 
+        leadRightMotor.getEncoder().getPosition());
   }
 
   public void driveArcade(double xSpeed, double zRotation) {
@@ -155,16 +139,8 @@ public class Drivebase extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // leftTuning.updatePID(leadLeftMotor);
-    // rightTuning.updatePID(leadRightMotor);
-
-    Pose2d newodomPose = odometry.update(
-        gyro.getRotation2d(),
-  
-        // TODO: Check if leadXXXMotor.getEncoder().getPosition() returns the distance in meters
-        // TODO: Should we use both leadMotor and followerMotor encoders and than avarage them
-        leadLeftMotor.getEncoder().getPosition(), 
-        leadRightMotor.getEncoder().getPosition());
-    this.field.setRobotPose(newodomPose);
+    leftTuning.updatePID(leadLeftMotor);
+    rightTuning.updatePID(leadRightMotor);
+    updateOdometry();
   }
 }
