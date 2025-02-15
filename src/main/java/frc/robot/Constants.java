@@ -6,6 +6,7 @@ package frc.robot;
 
 import poplib.motor.MotorConfig;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Translation2d;
 import poplib.control.PIDConfig;
 import poplib.motor.FollowerConfig;
 import poplib.motor.Mode;
@@ -24,6 +25,13 @@ public final class Constants {
   }
 
   public static class DriveConstants {
+
+    public static class AutoAlign{
+        public static final Translation2d DEFAULT_OFFSET = new Translation2d(0.5, 0.0);
+      //TODO: find correct offset
+      public static final double X_TOLERANCE = 0.1;
+      public static final double THETA_TOLERANCE = edu.wpi.first.math.util.Units.degreesToRadians(2.0);
+    } 
 
     public static final boolean PID_TUNING_MODE = false;
 

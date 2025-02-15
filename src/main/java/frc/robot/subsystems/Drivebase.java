@@ -4,18 +4,23 @@
 
 package frc.robot.subsystems;
 
+import java.util.function.Supplier;
+
 import com.revrobotics.spark.SparkMax;
 import com.studica.frc.AHRS;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.DriveConstants.AutoAlign;
 import poplib.smart_dashboard.PIDTuning;
 
 public class Drivebase extends SubsystemBase {
@@ -36,6 +41,9 @@ public class Drivebase extends SubsystemBase {
   protected PIDTuning leftTuning;
   protected PIDTuning rightTuning;
   private static Drivebase instance;
+  private Translation2d offset;
+  private Field2d field;
+  private Pose2d currentPose;
 
   public static Drivebase getInstance() {
     if (instance == null) {
@@ -58,6 +66,10 @@ public class Drivebase extends SubsystemBase {
     gyro = new AHRS(null);
     gyro.reset();
 
+    field = new Field2d();
+    xpid.setTolerance(AutoAlign.X_TOLERANCE);
+    thetapid.setTolerance(AutoAlign.THETA_TOLERANCE);
+
     odometry = new DifferentialDriveOdometry
     (gyro.getRotation2d(), leadLeftMotor.getEncoder().getPosition(), 
     leadRightMotor.getEncoder().getPosition(), new Pose2d(0,0, new Rotation2d()));
@@ -73,15 +85,43 @@ public class Drivebase extends SubsystemBase {
     drive = new DifferentialDrive(leadLeftMotor, leadRightMotor);
   }
 
-  public void updateOdometry() {
-    odometry.update(
-        gyro.getRotation2d(),
-  
-        // TODO: Check if leadXXXMotor.getEncoder().getPosition() returns the distance in meters
-        // TODO: Should we use both leadMotor and followerMotor encoders and than avarage them
-        leadLeftMotor.getEncoder().getPosition(), 
-        leadRightMotor.getEncoder().getPosition());
+  public Command moveToPoseOdom(Supplier<Pose2d> poseSupplier, Translation2d newOffset) {
+    return runOnce(() -> {
+      offset = newOffset == null ? DriveConstants.AutoAlign.DEFAULT_OFFSET : newOffset;
+
+      Pose2d pose = poseSupplier.get();
+      Rotation2d targetRot = pose.getRotation();
+
+      offset = offset.rotateBy(targetRot);
+      Translation2d offsetTarget = pose.getTranslation().plus(offset); 
+
+      field.getObject("target").setPose(new Pose2d(offsetTarget, targetRot));
+
+      xpid.setSetpoint(offsetTarget.getX());
+      thetapid.setSetpoint(targetRot.getRadians());
+
+      xpid.calculate(currentPose.getX());
+      thetapid.calculate(currentPose.getRotation().getRadians());
+    }).andThen(run(
+      () -> {
+          turn(thetapid.calculate(currentPose.getRotation().getRadians()));
+      }
+  )).until(
+    () -> thetapid.atSetpoint()
+    ).andThen(run(
+      () -> {
+        pleaseDrive(xpid.calculate(currentPose.getX()));
+      }
+    )).until(
+      () -> xpid.atSetpoint()
+    ).andThen(
+      () -> {
+        xpid.close();
+        thetapid.close();
+      }
+    );
   }
+
 
   public Command turn(double angle){
     return runOnce(() -> {
@@ -115,9 +155,16 @@ public class Drivebase extends SubsystemBase {
 
   @Override
   public void periodic() {
-    updateOdometry();
-    // TODO: why we run this logic 50 times per second?
     // leftTuning.updatePID(leadLeftMotor);
     // rightTuning.updatePID(leadRightMotor);
+
+    Pose2d newodomPose = odometry.update(
+        gyro.getRotation2d(),
+  
+        // TODO: Check if leadXXXMotor.getEncoder().getPosition() returns the distance in meters
+        // TODO: Should we use both leadMotor and followerMotor encoders and than avarage them
+        leadLeftMotor.getEncoder().getPosition(), 
+        leadRightMotor.getEncoder().getPosition());
+    this.field.setRobotPose(newodomPose);
   }
 }
