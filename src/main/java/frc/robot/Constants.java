@@ -44,7 +44,7 @@ public final class Constants {
     public static final PIDController THETA_PID_CONTROLLER = new PIDConfig(0, 0, 0, 0).getPIDController();
 
     public static final MotorConfig LeadLeftMotor = new MotorConfig(
-      0,
+      1,
       20, 
       true, 
       Mode.COAST
@@ -53,11 +53,11 @@ public final class Constants {
     public static final FollowerConfig FollowLeftMotor = new FollowerConfig(
       LeadLeftMotor,
       false,
-      0
+      2
     );
 
     public static final MotorConfig LeadRightMotor = new MotorConfig(
-      0,
+      3,
       20, 
       false, 
       Mode.COAST
@@ -66,7 +66,7 @@ public final class Constants {
     public static final FollowerConfig FollowRightMotor = new FollowerConfig(
       LeadRightMotor,
       false,
-      0
+      4
     );
 
 
