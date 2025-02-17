@@ -6,8 +6,10 @@ package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkMax;
 import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -21,11 +23,12 @@ public class Drivebase extends SubsystemBase {
   private final SparkMax followLeftMotor;
 
   private final DifferentialDrive differentialDrive;
+  private final DifferentialDriveOdometry odometry;
 
-  private DifferentialDriveOdometry odometry;
-  private AHRS gyro;
+  // TODO: Check this with hardware person about the the gyro sensor
+  private final AHRS gyro = new AHRS(NavXComType.kMXP_SPI);
+  
   private static Drivebase driveSubystem;
-
   public static Drivebase getDriveSubystem() {
     if (driveSubystem == null) {
         driveSubystem = new Drivebase();
@@ -38,11 +41,16 @@ public class Drivebase extends SubsystemBase {
     followLeftMotor = DriveConstants.FollowLeftMotor.createSparkMax();
     leadRightMotor = DriveConstants.LeadRightMotor.createSparkMax();
     followRightMotor = DriveConstants.FollowRightMotor.createSparkMax();    
-    differentialDrive = new DifferentialDrive(leadLeftMotor, leadRightMotor);
-    
-    // TODO: new AHRS(null) is the correct way to create gyro?
-    gyro = new AHRS(null);
+    differentialDrive = new DifferentialDrive(leadLeftMotor, leadRightMotor);    
+
     gyro.reset();
+
+    // TODO: Make sure when the Drivebase is created, the initialRotation, leftDistanceMeters, rightDistanceMeters are setting properly
+    Rotation2d initialRotation = gyro.getRotation2d();
+    double leftDistanceMeters = 0;
+    double rightDistanceMeters = 0;
+    odometry = new DifferentialDriveOdometry(initialRotation, leftDistanceMeters, rightDistanceMeters);
+    SmartDashboard.putString("odometry started at: ", initialRotation.toString() + ", leftDistanceMeters: " + leftDistanceMeters + ", rightDistanceMeters = " + rightDistanceMeters);
   }
 
   public void updateOdometry() {
