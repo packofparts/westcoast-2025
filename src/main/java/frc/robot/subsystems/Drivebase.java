@@ -25,7 +25,7 @@ public class Drivebase extends SubsystemBase {
   private final DifferentialDrive differentialDrive;
   private final DifferentialDriveOdometry odometry;
 
-  // TODO: Check this with hardware person about the the gyro sensor
+  // TODO: Check this with hardware person about the gyro sensor com type
   private final AHRS gyro = new AHRS(NavXComType.kMXP_SPI);
   
   private static Drivebase driveSubystem;
