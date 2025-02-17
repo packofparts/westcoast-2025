@@ -35,33 +35,36 @@ public final class Constants {
     public static final PIDController X_PID_CONTROLLER = new PIDConfig(0, 0, 0, 0).getPIDController();
     public static final PIDController THETA_PID_CONTROLLER = new PIDConfig(0, 0, 0, 0).getPIDController();
 
+    // TODO: Make sure the CAN IDs are correct for 4 motors 
+    // TODO: Make sure the current limit is 20A or 60A
+    // MotorConfig(int canId, int currentLimit, Boolean inversion, Mode mode)
     public static final MotorConfig LeadLeftMotor = new MotorConfig(
-      0,
+      1,
       20, 
       true, 
       Mode.COAST
     );
 
+    // FollowerConfig(MotorConfig leadConfig, boolean inverted, int canId)
     public static final FollowerConfig FollowLeftMotor = new FollowerConfig(
       LeadLeftMotor,
       false,
-      0
+      2
     );
 
+    // MotorConfig(int canId, int currentLimit, Boolean inversion, Mode mode)
     public static final MotorConfig LeadRightMotor = new MotorConfig(
-      0,
+      3,
       20, 
       false, 
       Mode.COAST
     );
 
+    // FollowerConfig(MotorConfig leadConfig, boolean inverted, int canId)
     public static final FollowerConfig FollowRightMotor = new FollowerConfig(
       LeadRightMotor,
       false,
-      0
+      4
     );
-
-
   }
-
 }
