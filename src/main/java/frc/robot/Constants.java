@@ -51,7 +51,7 @@ public final class Constants {
 
     public static final MotorConfig LeadLeftMotor = new MotorConfig(
       2,
-      20, 
+      40, 
       true, 
       Mode.COAST
     );
@@ -64,7 +64,7 @@ public final class Constants {
 
     public static final MotorConfig LeadRightMotor = new MotorConfig(
       4,
-      20, 
+      40, 
       false, 
       Mode.COAST
     );
