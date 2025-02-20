@@ -35,12 +35,14 @@ public class RobotContainer {
     //   drive));
 
     drive.setDefaultCommand(
-      new DriveCommand(() -> driveController.getLeftY(), () -> driveController.getRightX(), drive));
+      new DriveCommand(
+        () -> driveController.getLeftY() *
+            (driveController.getHID().getRightBumperButton() ? 1 : 0.5),
+        () -> driveController.getRightX(),
+        drive)
+      );
 
-    oi.getDriverButton(XboxController.Axis.kLeftY.value).onChange(drive.pleaseDrive(XboxController.Axis.kLeftY.value));
-
-    oi.getDriverButton(XboxController.Axis.kRightY.value).onChange(drive.turn(XboxController.Axis.kRightY.value));
-
+    
   }
 
   /**

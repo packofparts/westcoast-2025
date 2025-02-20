@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.DriveConstants.AutoAlign;
 import poplib.smart_dashboard.PIDTuning;
 
 public class Drivebase extends SubsystemBase {
@@ -31,11 +32,14 @@ public class Drivebase extends SubsystemBase {
   private AHRS gyro;
   private static PIDController xpid;
   private static PIDController thetapid;
-  private static double turnSetpoint;
-  private static double Setpoint;
   protected PIDTuning leftTuning;
   protected PIDTuning rightTuning;
   private static Drivebase instance;
+  private Pose2d currentPose;
+  private double X;
+  private double Y;
+  private double theta;
+
 
   public static Drivebase getInstance() {
     if (instance == null) {
@@ -58,6 +62,10 @@ public class Drivebase extends SubsystemBase {
     gyro = new AHRS(null);
     gyro.reset();
 
+    xpid.setTolerance(AutoAlign.X_TOLERANCE);
+    thetapid.setTolerance(AutoAlign.THETA_TOLERANCE);
+    currentPose = new Pose2d();
+
     odometry = new DifferentialDriveOdometry
     (gyro.getRotation2d(), leadLeftMotor.getEncoder().getPosition(), 
     leadRightMotor.getEncoder().getPosition(), new Pose2d(0,0, new Rotation2d()));
@@ -65,12 +73,54 @@ public class Drivebase extends SubsystemBase {
     //.getPosition returns anmount of motor turns but we need distance traveled
     // xpid = DriveConstants.X_PID_CONFIG.getPIDController(); 
     // thetapid = DriveConstants.THETA_PID_CONFIG.getPIDController();
-
-    turnSetpoint = 0.0;
-    thetapid.setSetpoint(turnSetpoint);
-    xpid.setSetpoint(Setpoint);
-    
     drive = new DifferentialDrive(leadLeftMotor, leadRightMotor);
+  }
+
+  public Command moveToPose(Pose2d targetPose2d) {
+     return runOnce(() -> {
+      X = Math.abs(currentPose.getX() - targetPose2d.getX());
+      Y = Math.abs(currentPose.getY() - targetPose2d.getY());
+      theta = Math.atan(Y/X);
+     }).andThen(
+      turnToPose(theta)
+     ).andThen(
+      driveToPose(targetPose2d)
+     );
+  }
+
+  public Command turnToPose(double angle){
+    return runOnce(() -> {
+      thetapid.setSetpoint(0);
+      thetapid.calculate(gyro.getAngle());
+    }).andThen(run(() -> {
+      leadLeftMotor.set(thetapid.calculate(gyro.getAngle())*DriveConstants.DRIVE_MOVE_SPEED);
+    })).alongWith(run(() -> {
+      leadRightMotor.set(thetapid.calculate(gyro.getAngle())*DriveConstants.DRIVE_REVERSE_SPEED);
+    })).until(thetapid::atSetpoint).
+    andThen(runOnce(() -> {
+      leadLeftMotor.stopMotor();
+      leadRightMotor.stopMotor();
+      thetapid.close();
+    }));
+  }
+
+  public Command driveToPose(Pose2d targetPose){
+    return runOnce(() -> {
+      xpid.setSetpoint(0.0);
+      X = Math.abs(currentPose.getX() - targetPose.getX());
+      Y = Math.abs(currentPose.getY() - targetPose.getY());
+      xpid.calculate(Math.hypot(X, Y));
+    }).andThen(run( () -> {
+      X = Math.abs(currentPose.getX() - targetPose.getX());
+      Y = Math.abs(currentPose.getY() - targetPose.getY());
+      leadLeftMotor.set(xpid.calculate(Math.hypot(X, Y)));
+      leadRightMotor.set(xpid.calculate(Math.hypot(X, Y)));
+    })).until(xpid::atSetpoint)
+    .andThen(runOnce(() -> {
+      xpid.close();
+      leadLeftMotor.stopMotor();
+      leadRightMotor.stopMotor();
+    }));
   }
 
   public void updateOdometry() {
@@ -83,41 +133,14 @@ public class Drivebase extends SubsystemBase {
         leadRightMotor.getEncoder().getPosition());
   }
 
-  public Command turn(double angle){
-    return runOnce(() -> {
-      thetapid.setSetpoint(angle);
-      thetapid.calculate(gyro.getAngle());
-    }).andThen(run(() -> {
-      leadLeftMotor.set(thetapid.calculate(gyro.getAngle())*DriveConstants.DRIVE_MOVE_SPEED);
-    })).alongWith(run(() -> {
-      leadRightMotor.set(thetapid.calculate(gyro.getAngle())*DriveConstants.DRIVE_REVERSE_SPEED);
-    })).until(thetapid::atSetpoint).
-    andThen(runOnce(() -> {
-      leadLeftMotor.stopMotor();
-      leadRightMotor.stopMotor();
-    }));
-  }
-
-  public Command pleaseDrive(double velocity){
-    return runOnce(() -> {
-      xpid.setSetpoint(velocity);
-      xpid.calculate(leadLeftMotor.get());
-    }).andThen(run( () -> {
-      leadLeftMotor.set(xpid.calculate(velocity));
-    })).alongWith(run(() -> {
-      leadRightMotor.set(xpid.calculate(velocity));
-    }));
-  }
-
   public void driveArcade(double xSpeed, double zRotation) {
     drive.arcadeDrive(xSpeed, zRotation);
   }
 
   @Override
   public void periodic() {
+    leftTuning.updatePID(leadLeftMotor);
+    rightTuning.updatePID(leadRightMotor);
     updateOdometry();
-    // TODO: why we run this logic 50 times per second?
-    // leftTuning.updatePID(leadLeftMotor);
-    // rightTuning.updatePID(leadRightMotor);
   }
 }

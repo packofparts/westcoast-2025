@@ -6,6 +6,7 @@ package frc.robot;
 
 import poplib.motor.MotorConfig;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Translation2d;
 import poplib.control.PIDConfig;
 import poplib.motor.FollowerConfig;
 import poplib.motor.Mode;
@@ -25,6 +26,13 @@ public final class Constants {
 
   public static class DriveConstants {
 
+    public static class AutoAlign{
+        public static final Translation2d DEFAULT_OFFSET = new Translation2d(0.5, 0.0);
+      //TODO: find correct offset
+      public static final double X_TOLERANCE = 0.1;
+      public static final double THETA_TOLERANCE = edu.wpi.first.math.util.Units.degreesToRadians(2.0);
+    } 
+
     public static final boolean PID_TUNING_MODE = false;
 
     public static final int DRIVE_MOVE_SPEED = 1;
@@ -36,7 +44,7 @@ public final class Constants {
     public static final PIDController THETA_PID_CONTROLLER = new PIDConfig(0, 0, 0, 0).getPIDController();
 
     public static final MotorConfig LeadLeftMotor = new MotorConfig(
-      0,
+      1,
       20, 
       true, 
       Mode.COAST
@@ -45,11 +53,11 @@ public final class Constants {
     public static final FollowerConfig FollowLeftMotor = new FollowerConfig(
       LeadLeftMotor,
       false,
-      0
+      2
     );
 
     public static final MotorConfig LeadRightMotor = new MotorConfig(
-      0,
+      3,
       20, 
       false, 
       Mode.COAST
@@ -58,7 +66,7 @@ public final class Constants {
     public static final FollowerConfig FollowRightMotor = new FollowerConfig(
       LeadRightMotor,
       false,
-      0
+      4
     );
 
 
