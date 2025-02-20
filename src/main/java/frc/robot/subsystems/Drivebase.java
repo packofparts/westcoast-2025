@@ -26,7 +26,7 @@ public class Drivebase extends SubsystemBase {
   private final DifferentialDriveOdometry odometry;
 
   // TODO: Check this with hardware person about the gyro sensor com type
-  private final AHRS gyro = new AHRS(NavXComType.kMXP_SPI);
+  private final AHRS gyro;
   
   private static Drivebase driveSubystem;
   public static Drivebase getDriveSubystem() {
@@ -42,10 +42,9 @@ public class Drivebase extends SubsystemBase {
     leadRightMotor = DriveConstants.LeadRightMotor.createSparkMax();
     followRightMotor = DriveConstants.FollowRightMotor.createSparkMax();    
     differentialDrive = new DifferentialDrive(leadLeftMotor, leadRightMotor);    
-
+    gyro = new AHRS(NavXComType.kMXP_SPI);
     gyro.reset();
 
-    // TODO: Make sure when the Drivebase is created, the initialRotation, leftDistanceMeters, rightDistanceMeters are setting properly
     Rotation2d initialRotation = gyro.getRotation2d();
     double leftDistanceMeters = 0;
     double rightDistanceMeters = 0;
