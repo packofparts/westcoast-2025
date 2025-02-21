@@ -19,10 +19,6 @@ import poplib.motor.Mode;
  * <p>It is advised to statically import this class (or one of its inner classes) wherever the
  * constants are needed, to reduce verbosity.
  */
-// public final class Constants {
-//   public static class OperatorConstants {
-//     public static final int kDriverControllerPort = 0;
-//   }
 
 public final class Constants {
   public static class OperatorConstants {
@@ -32,8 +28,8 @@ public final class Constants {
   public static class DriveConstants {
 
     public static class AutoAlign{
-        public static final Translation2d DEFAULT_OFFSET = new Translation2d(0.5, 0.0);
-      //TODO: find correct offset
+      public static final Translation2d DEFAULT_OFFSET = new Translation2d(0.5, 0.0);
+      
       public static final double X_TOLERANCE = 0.1;
       public static final double THETA_TOLERANCE = edu.wpi.first.math.util.Units.degreesToRadians(2.0);
     } 
