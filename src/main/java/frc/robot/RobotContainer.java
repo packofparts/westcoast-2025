@@ -4,51 +4,27 @@
 
 package frc.robot;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.DriveCommand;
 import frc.robot.subsystems.Drivebase;
-import poplib.controllers.oi.XboxOI;
+import edu.wpi.first.wpilibj2.command.Command;
 
 
 public class RobotContainer {
-  private Drivebase drive = new Drivebase();
-  XboxOI oi;
-  CommandXboxController driveController = new CommandXboxController(0);
-  // private XboxOI driveJoystick;
-  // private CommandJoystick transJoystick;
+
+  private final Drivebase driveSubsystem = Drivebase.getDriveSubystem();
+  private final XboxController driveController = new XboxController(OperatorConstants.kDriverControllerPort);
 
   public RobotContainer() {
-    drive = Drivebase.getInstance();
-    oi = XboxOI.getInstance();
     configureBindings();
-
-    // driveJoystick = new XboxOI();
-    // transJoystick = new CommandJoystick(1);
   }
   
-  private void configureBindings() {
-    // drive.setDefaultCommand(new DriveCommand(
-    //   () -> -oi.getDriverTrigger(XboxController.Axis.kLeftY) *
-    //       (oi.getDriverButton(XboxController.Button.kRightBumper) ? 1 : 0.5), 
-    //   () -> -oi.getDriverTrigger(XboxController.Axis.kRightX),
-    //   drive));
-
-    drive.setDefaultCommand(
-      new DriveCommand(() -> driveController.getLeftY(), () -> driveController.getRightX(), drive));
-
-    oi.getDriverButton(XboxController.Axis.kLeftY.value).onChange(drive.pleaseDrive(XboxController.Axis.kLeftY.value));
-
-    oi.getDriverButton(XboxController.Axis.kRightY.value).onChange(drive.turn(XboxController.Axis.kRightY.value));
-
+  private double xSpeed() {
+    return -driveController.getLeftY();
   }
 
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
-  public Command getAutonomousCommand() {
-    return null;
+  private void configureBindings() {
+    Command cmd = new DriveCommand(this::xSpeed, ()-> -driveController.getRightX(), driveSubsystem);
+    driveSubsystem.setDefaultCommand(cmd);
   }
 }

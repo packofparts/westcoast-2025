@@ -6,6 +6,7 @@ package frc.robot;
 
 import poplib.motor.MotorConfig;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Translation2d;
 import poplib.control.PIDConfig;
 import poplib.motor.FollowerConfig;
 import poplib.motor.Mode;
@@ -18,6 +19,7 @@ import poplib.motor.Mode;
  * <p>It is advised to statically import this class (or one of its inner classes) wherever the
  * constants are needed, to reduce verbosity.
  */
+
 public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
@@ -25,10 +27,18 @@ public final class Constants {
 
   public static class DriveConstants {
 
+    public static class AutoAlign{
+      public static final Translation2d DEFAULT_OFFSET = new Translation2d(0.5, 0.0);
+      
+      public static final double X_TOLERANCE = 0.1;
+      public static final double THETA_TOLERANCE = edu.wpi.first.math.util.Units.degreesToRadians(2.0);
+    } 
+
     public static final boolean PID_TUNING_MODE = false;
 
-    public static final int DRIVE_MOVE_SPEED = 1;
-    public static final int DRIVE_REVERSE_SPEED = -1;
+    public static final int DRIVE_MOVE_SPEED = -1;
+    public static final int DRIVE_REVERSE_SPEED = 1;
+    public static final int STOP_SPEED = 0;
     public static final double TRACK_WIDTH = 0;
     public static final double WHEEL_RADIUS = 0;
     public static final double ENCODER_RESOLUTION = 0;
@@ -36,8 +46,8 @@ public final class Constants {
     public static final PIDController THETA_PID_CONTROLLER = new PIDConfig(0, 0, 0, 0).getPIDController();
 
     public static final MotorConfig LeadLeftMotor = new MotorConfig(
-      0,
-      20, 
+      2,
+      40, 
       true, 
       Mode.COAST
     );
@@ -45,12 +55,12 @@ public final class Constants {
     public static final FollowerConfig FollowLeftMotor = new FollowerConfig(
       LeadLeftMotor,
       false,
-      0
+      5
     );
 
     public static final MotorConfig LeadRightMotor = new MotorConfig(
-      0,
-      20, 
+      4,
+      40, 
       false, 
       Mode.COAST
     );
@@ -58,10 +68,7 @@ public final class Constants {
     public static final FollowerConfig FollowRightMotor = new FollowerConfig(
       LeadRightMotor,
       false,
-      0
+      3
     );
-
-
   }
-
 }
